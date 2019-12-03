@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{JsValue, Json, Reads}
 import javax.inject.{Inject, _}
 import play.api.mvc._
 
@@ -33,18 +33,17 @@ class CurrencyController @Inject()(cc: ControllerComponents) extends AbstractCon
     amount * rate
   }
 
-  def convert: Action[AnyContent] = Action { request: Request[AnyContent] =>
-    val jsonBody = request.body.asJson
-    jsonBody
-      .map { json =>
-        val result = json.as[Array[CurrencyRequest]].map(z => {
+  def convert(): Action[JsValue] = Action(parse.json) { implicit request =>
+    class Response(val session: String)
+    request.body.validate[Array[CurrencyRequest]].fold(
+      errors =>  BadRequest("Expecting application/json request body : [{\"id\":\"123\", \"value\":10,\"from_currency\":\"USD\",\"to_currency\":\"PLN\"}]"),
+      query => {
+        val result = query.map(z => {
           val conversion = doConvert(z.from_currency, z.to_currency, z.value)
           CurrencyResponse(z.id, z.value, conversion, z.from_currency, z.to_currency)
         })
         Ok(Json.toJson(result))
       }
-      .getOrElse {
-        BadRequest("Expecting application/json request body")
-      }
+    )
   }
 }
