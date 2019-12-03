@@ -6,6 +6,7 @@ import play.api.mvc._
 
 object CurrencyRequest {
   implicit val itemReads: Reads[CurrencyRequest] = Json.reads[CurrencyRequest]
+  implicit val writes = Json.writes[CurrencyRequest]
 }
 
 case class CurrencyRequest(id: String, value: Double, from_currency: String, to_currency: String)
